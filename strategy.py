@@ -305,7 +305,7 @@ def generate_signals(anchor_df: pd.DataFrame, target_df: pd.DataFrame) -> pd.Dat
     # Final position cleanup
     if 'SELL' not in signals[-100:] and 'BUY' in signals:
         last_buy_idx = len(signals) - 1 - signals[::-1].index('BUY')
-        for cleanup_idx in range(last_buy_idx + 1, min(last_buy_idx + 50, len(signals)):
+        for cleanup_idx in range(last_buy_idx + 1, min(last_buy_idx + 50, len(signals))):
             if signals[cleanup_idx] == 'HOLD':
                 signals[cleanup_idx] = 'SELL'
                 position_sizes[cleanup_idx] = 1.0
