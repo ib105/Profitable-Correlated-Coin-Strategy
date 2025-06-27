@@ -238,40 +238,60 @@ def check_buy_conditions(rsi, bb_signal, momentum, trend_strength, volatility,
                         btc_momentum, eth_momentum, index):
     """
     Check various buy conditions and return signal strength.
+    Enhanced with more opportunities for better profitability.
     """
     buy_signal = False
     position_size = 0.0
     
-    # Condition 1: Oversold with momentum recovery
-    if (pd.notna(rsi) and rsi < 35 and 
+    # Condition 1: Strong oversold with momentum recovery
+    if (pd.notna(rsi) and rsi < 40 and 
         pd.notna(bb_signal) and bb_signal == 1 and 
-        pd.notna(momentum) and momentum > -0.01):
+        pd.notna(momentum) and momentum > -0.02):
         buy_signal = True
         position_size = 0.6
     
     # Condition 2: Strong upward momentum
-    elif (pd.notna(momentum) and momentum > 0.03 and 
-          pd.notna(trend_strength) and trend_strength > 0.01 and
-          pd.notna(btc_momentum) and btc_momentum > 0.01):
+    elif (pd.notna(momentum) and momentum > 0.025 and 
+          pd.notna(trend_strength) and trend_strength > 0.005 and
+          pd.notna(btc_momentum) and btc_momentum > 0.008):
         buy_signal = True
         position_size = 0.7
     
-    # Condition 3: Market-wide momentum
-    elif (pd.notna(btc_momentum) and btc_momentum > 0.02 and
-          pd.notna(eth_momentum) and eth_momentum > 0.015 and
-          pd.notna(trend_strength) and trend_strength > -0.005):
+    # Condition 3: Market-wide momentum (relaxed)
+    elif (pd.notna(btc_momentum) and btc_momentum > 0.015 and
+          pd.notna(eth_momentum) and eth_momentum > 0.01 and
+          pd.notna(trend_strength) and trend_strength > -0.01):
         buy_signal = True
         position_size = 0.5
     
-    # Condition 4: Volatility breakout
-    elif (pd.notna(volatility) and volatility > 0.04 and
-          pd.notna(momentum) and momentum > 0.02):
+    # Condition 4: Volatility breakout (more sensitive)
+    elif (pd.notna(volatility) and volatility > 0.03 and
+          pd.notna(momentum) and momentum > 0.015):
         buy_signal = True
         position_size = 0.4
     
-    # Condition 5: Regular momentum (ensure minimum activity)
-    elif (index % 300 == 0 and 
-          pd.notna(btc_momentum) and btc_momentum > 0.005):
+    # Condition 5: Moderate momentum signals
+    elif (pd.notna(momentum) and momentum > 0.02 and
+          pd.notna(btc_momentum) and btc_momentum > 0.01):
+        buy_signal = True
+        position_size = 0.4
+    
+    # Condition 6: RSI bounce signals
+    elif (pd.notna(rsi) and 25 < rsi < 45 and
+          pd.notna(trend_strength) and trend_strength > -0.005):
+        buy_signal = True
+        position_size = 0.3
+    
+    # Condition 7: BTC/ETH alignment (new)
+    elif (pd.notna(btc_momentum) and btc_momentum > 0.01 and
+          pd.notna(eth_momentum) and eth_momentum > 0.005 and
+          pd.notna(momentum) and momentum > 0.01):
+        buy_signal = True
+        position_size = 0.45
+    
+    # Condition 8: Regular momentum (ensure activity)
+    elif (index % 200 == 0 and 
+          pd.notna(btc_momentum) and btc_momentum > 0.003):
         buy_signal = True
         position_size = 0.3
     
@@ -281,36 +301,40 @@ def check_buy_conditions(rsi, bb_signal, momentum, trend_strength, volatility,
 def check_sell_conditions(profit_pct, hours_held, rsi, momentum, trend_strength,
                          btc_momentum, eth_momentum):
     """
-    Check various sell conditions.
+    Check various sell conditions with optimized timing.
     """
     sell_signal = False
     
-    # Profit taking
-    if profit_pct >= 0.08:  # 8% profit
+    # Profit taking (slightly more aggressive)
+    if profit_pct >= 0.07:  # 7% profit
         sell_signal = True
-    elif profit_pct >= 0.05 and hours_held >= 12:  # 5% after 12 hours
+    elif profit_pct >= 0.045 and hours_held >= 10:  # 4.5% after 10 hours
         sell_signal = True
-    elif profit_pct >= 0.03 and hours_held >= 24:  # 3% after 24 hours
+    elif profit_pct >= 0.025 and hours_held >= 20:  # 2.5% after 20 hours
         sell_signal = True
-    
-    # Stop loss
-    elif profit_pct <= -0.05:  # 5% loss
-        sell_signal = True
-    elif profit_pct <= -0.03 and hours_held >= 36:  # 3% loss after 36 hours
+    elif profit_pct >= 0.015 and hours_held >= 36:  # 1.5% after 36 hours
         sell_signal = True
     
-    # Time-based exit
-    elif hours_held >= 96:  # Max hold 96 hours
+    # Stop loss (tighter control)
+    elif profit_pct <= -0.04:  # 4% loss
+        sell_signal = True
+    elif profit_pct <= -0.025 and hours_held >= 24:  # 2.5% loss after 24 hours
+        sell_signal = True
+    elif profit_pct <= -0.015 and hours_held >= 48:  # 1.5% loss after 48 hours
         sell_signal = True
     
-    # Technical exits
-    elif (pd.notna(rsi) and rsi > 75 and hours_held >= 8):  # Overbought
+    # Time-based exit (shorter holds)
+    elif hours_held >= 72:  # Max hold 72 hours
         sell_signal = True
-    elif (pd.notna(momentum) and momentum < -0.03 and hours_held >= 12):  # Momentum reversal
+    
+    # Technical exits (more sensitive)
+    elif (pd.notna(rsi) and rsi > 70 and hours_held >= 6):  # Overbought
         sell_signal = True
-    elif (pd.notna(btc_momentum) and btc_momentum < -0.02 and hours_held >= 16):  # Market decline
+    elif (pd.notna(momentum) and momentum < -0.025 and hours_held >= 8):  # Momentum reversal
         sell_signal = True
-    elif (pd.notna(trend_strength) and trend_strength < -0.02 and hours_held >= 20):  # Trend break
+    elif (pd.notna(btc_momentum) and btc_momentum < -0.015 and hours_held >= 12):  # Market decline
+        sell_signal = True
+    elif (pd.notna(trend_strength) and trend_strength < -0.015 and hours_held >= 16):  # Trend break
         sell_signal = True
     
     return sell_signal
